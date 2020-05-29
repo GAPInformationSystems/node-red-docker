@@ -88,6 +88,10 @@ ENV NODE_RED_VERSION=$NODE_RED_VERSION \
 # Install SAP RFC per these instructions
 # http://sap.github.io/node-rfc/install.html#sap-nw-rfc-library-installation
 
+# Add bash
+# RUN apk add --no-cache bash
+# SHELL ["/bin/bash", "-c"]
+
 USER root
 RUN mkdir -p /usr/local/sap/nwrfcsdk
 
@@ -102,16 +106,26 @@ RUN mv nwrfcsdk/* ./
 RUN rmdir nwrfcsdk
 RUN rm nwrfc750P_4-70002752.zip
 
-ENV LD_LIBRARY_PATH /usr/local/sap/nwrfcsdk/lib
+# ENV LD_LIBRARY_PATH /usr/local/sap/nwrfcsdk/lib
+ENV LD_LIBRARY_PATH /lib:/usr/lib:/usr/glibc-compat/lib:/usr/local/sap/nwrfcsdk/lib
+
+
+# Add GLIBC
+RUN wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub
+RUN wget https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.31-r0/glibc-2.31-r0.apk
+RUN apk add glibc-2.31-r0.apk
+#
 
 RUN apk add cmake
 RUN apk add libuuid
 
 USER node-red
 ENV SAPNWRFC_HOME /usr/local/sap/nwrfcsdk
-ENV LD_LIBRARY_PATH /usr/local/sap/nwrfcsdk/lib
+# ENV LD_LIBRARY_PATH /usr/local/sap/nwrfcsdk/lib
+ENV LD_LIBRARY_PATH /lib:/usr/lib:/usr/glibc-compat/lib:/usr/local/sap/nwrfcsdk/lib
 
 WORKDIR /data
+# RUN ldconfig
 RUN npm install node-rfc
 RUN npm install node-red-contrib-saprfc
 
