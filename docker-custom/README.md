@@ -4,17 +4,21 @@ The docker-custom directory contains files you need to build your own images.
 
 The follow steps describe in short which steps to take to build your own images.
 
-## 1. git clone
+## 1. git clone this fork
 
 Clone the Node-RED Docker project from github
 ```shell script
-git clone https://github.com/node-red/node-red-docker.git
+git clone ~https://github.com/node-red/node-red-docker.git~ https://github.com/PaulWieland/node-red-docker.git
 ```
 
 Change dir to docker-custom
 ```shell script
 cd node-red-docker/docker-custom
 ```
+
+## Download nwrfc
+Download & Save the nwrfc750P_4-70002752.zip file into the same directory as docker-make.sh
+
 
 ## 1. **package.json**
 
