@@ -1,3 +1,6 @@
+# Build script to add SAP's node-rfc to Node RED.
+# Download and save nwrfc750P_4-70002752.zip into the same directory as this build script
+
 ARG ARCH=amd64
 ARG NODE_VERSION=10
 ARG OS=alpine
@@ -80,6 +83,43 @@ ENV NODE_RED_VERSION=$NODE_RED_VERSION \
 
 # ENV NODE_RED_ENABLE_SAFE_MODE=true    # Uncomment to enable safe start mode (flows not running)
 # ENV NODE_RED_ENABLE_PROJECTS=true     # Uncomment to enable projects option
+
+#### SAP RFC Stuff
+# Install SAP RFC per these instructions
+# http://sap.github.io/node-rfc/install.html#sap-nw-rfc-library-installation
+
+USER root
+RUN mkdir -p /usr/local/sap/nwrfcsdk
+
+ENV SAPNWRFC_HOME /usr/local/sap/nwrfcsdk
+WORKDIR ${SAPNWRFC_HOME}
+
+# Copy SAP rfc sdk zip
+COPY ./nwrfc750P_4-70002752.zip ${SAPNWRFC_HOME}/
+
+RUN unzip nwrfc750P_4-70002752.zip
+RUN mv nwrfcsdk/* ./
+RUN rmdir nwrfcsdk
+RUN rm nwrfc750P_4-70002752.zip
+
+ENV LD_LIBRARY_PATH /usr/local/sap/nwrfcsdk/lib
+
+RUN apk add cmake
+RUN apk add libuuid
+
+USER node-red
+ENV SAPNWRFC_HOME /usr/local/sap/nwrfcsdk
+ENV LD_LIBRARY_PATH /usr/local/sap/nwrfcsdk/lib
+
+WORKDIR /data
+RUN npm install node-rfc
+RUN npm install node-red-contrib-saprfc
+
+### END SAP RFC Stuff
+
+
+
+WORKDIR /usr/src/node-red
 
 # User configuration directory volume
 VOLUME ["/data"]
