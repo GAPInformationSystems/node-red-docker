@@ -19,6 +19,8 @@ cd node-red-docker/docker-custom
 ## Download nwrfc
 Download & Save the nwrfc750P_4-70002752.zip file into the same directory as docker-make.sh
 
+Instructions for getting nwrfc installed are here: http://sap.github.io/node-rfc/install.html#sap-nw-rfc-library-installation
+
 
 ## 1. **package.json**
 
