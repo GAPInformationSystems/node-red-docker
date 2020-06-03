@@ -4,6 +4,7 @@
 ARG ARCH=amd64
 ARG NODE_VERSION=10
 ARG OS=alpine
+# ARG OS=stretch
 
 #### Stage BASE ########################################################################################################
 FROM ${ARCH}/node:${NODE_VERSION}-${OS} AS base
@@ -107,26 +108,40 @@ RUN rmdir nwrfcsdk
 RUN rm nwrfc750P_4-70002752.zip
 
 # ENV LD_LIBRARY_PATH /usr/local/sap/nwrfcsdk/lib
-ENV LD_LIBRARY_PATH /lib:/usr/lib:/usr/glibc-compat/lib:/usr/local/sap/nwrfcsdk/lib
-
+# ENV LD_LIBRARY_PATH /lib:/usr/lib:/usr/glibc-compat/lib:/usr/local/sap/nwrfcsdk/lib
+ENV LD_LIBRARY_PATH /usr/glibc-compat/lib:/usr/local/sap/nwrfcsdk/lib
 
 # Add GLIBC
 RUN wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub
-RUN wget https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.31-r0/glibc-2.31-r0.apk
-RUN apk add glibc-2.31-r0.apk
+# RUN wget https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.31-r0/glibc-2.31-r0.apk
+# RUN apk add glibc-2.31-r0.apk
+RUN wget https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.31-r0/glibc-dev-2.31-r0.apk
+RUN apk add glibc-dev-2.31-r0.apk
 #
 
 RUN apk add cmake
 RUN apk add libuuid
+# RUN ln -s /lib/libc.musl-x86_64.so. /lib/ld-linux-x86-64.so.2
+
+RUN chmod -R 777 /usr/local/sap
 
 USER node-red
 ENV SAPNWRFC_HOME /usr/local/sap/nwrfcsdk
 # ENV LD_LIBRARY_PATH /usr/local/sap/nwrfcsdk/lib
-ENV LD_LIBRARY_PATH /lib:/usr/lib:/usr/glibc-compat/lib:/usr/local/sap/nwrfcsdk/lib
+# ENV LD_LIBRARY_PATH /lib:/usr/lib:/usr/glibc-compat/lib:/usr/local/sap/nwrfcsdk/lib
+ENV LD_LIBRARY_PATH /usr/glibc-compat/lib:/usr/local/sap/nwrfcsdk/lib
 
 WORKDIR /data
-# RUN ldconfig
-RUN npm install node-rfc
+
+# Copy the custom node-rfc to the data dir and install/compile locally instead of from npm registry
+COPY ./node-rfc /data/
+
+WORKDIR /data/node-rfc
+RUN npm run prebuild
+RUN npm install
+WORKDIR /data
+
+#RUN npm install node-rfc
 RUN npm install node-red-contrib-saprfc
 
 ### END SAP RFC Stuff
