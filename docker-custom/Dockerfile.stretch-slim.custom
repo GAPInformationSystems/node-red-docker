@@ -30,7 +30,7 @@ RUN apt-get update || : && apt-get install python -y
 RUN apt-get install perl-base -y
 RUN apt-get install perl-modules -y
 RUN apt-get install unzip -y
-RUN apt-get install vim
+RUN apt-get install vim -y
 
 RUN    deluser --remove-home node
 # RUN    adduser -h /usr/src/node-red -D -H node-red -u 1000
