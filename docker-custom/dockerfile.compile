@@ -1,0 +1,63 @@
+#### Compile node-rfc ##################################################################################################
+ARG ARCH=amd64
+ARG NODE_VERSION=10
+ARG OS=buster-slim
+
+#### Stage BASE ########################################################################################################
+FROM ${ARCH}/node:${NODE_VERSION}-${OS} AS base
+
+
+RUN apt-get update || : && apt-get install build-essential unzip python -y
+
+RUN adduser --home /tmp --disabled-password --no-create-home temp
+
+#### 
+#### SAP RFC Stuff
+# Install SAP RFC per these instructions
+# http://sap.github.io/node-rfc/install.html#sap-nw-rfc-library-installation
+
+RUN mkdir -p /usr/local/sap/nwrfcsdk
+
+ENV SAPNWRFC_HOME /usr/local/sap/nwrfcsdk
+WORKDIR ${SAPNWRFC_HOME}
+
+# Copy SAP rfc sdk zip
+COPY ./nwrfc750P_6-70002752.zip ${SAPNWRFC_HOME}/
+
+RUN unzip nwrfc750P_6-70002752.zip && \
+    mv nwrfcsdk/* ./ && \
+    rmdir nwrfcsdk && \
+    rm nwrfc750P_6-70002752.zip && \
+    chmod -R 777 /usr/local/sap
+
+RUN apt-get purge cmake
+
+#Install cmake from sh file
+COPY cmake-3.17.3-Linux-x86_64.sh /tmp/
+RUN chmod 755 /tmp/cmake-3.17.3-Linux-x86_64.sh && \
+    mkdir -p /opt/cmake && \
+    /tmp/cmake-3.17.3-Linux-x86_64.sh --skip-license --prefix=/opt/cmake
+ENV PATH="/opt/cmake/bin:${PATH}"
+
+ENV SAPNWRFC_HOME /usr/local/sap/nwrfcsdk
+ENV LD_LIBRARY_PATH /usr/glibc-compat/lib:/usr/local/sap/nwrfcsdk/lib
+
+WORKDIR /tmp
+# RUN ldconfig
+
+# TEMP install node-rfc pull request to fix rfc errors
+USER root
+RUN apt-get install build-essential -y
+COPY ./node-rfc /tmp/node-rfc
+COPY ./node-red-contrib-saprfc /tmp/node-red-contrib-saprfc
+RUN    chown -R temp:root /tmp && chmod -R g+rwX /tmp
+
+USER temp
+
+RUN npm install ./node-rfc && \
+    npm install ./node-red-contrib-saprfc && \
+    rm -rf ./node_modules/node-red-contrib-saprfc/node-rfc
+# END TEMP
+
+
+### END SAP RFC Stuff
