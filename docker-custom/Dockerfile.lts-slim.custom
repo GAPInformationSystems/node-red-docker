@@ -1,0 +1,148 @@
+# BUILD node-rfc from source
+FROM node:lts-slim
+
+COPY cmake-3.17.3-Linux-x86_64.sh /tmp/
+
+# Copy the cloned PR of node-rfc to be built
+COPY ./node-rfc /tmp/build/node-rfc
+COPY ./node-red-contrib-saprfc /tmp/build/node-red-contrib-saprfc
+
+# Setup build environment for compiling node-rfc from source
+RUN apt-get update || : && \
+    apt-get purge cmake && \ 
+    apt-get install perl-modules python build-essential -y --no-install-recommends && \
+    chmod 755 /tmp/cmake-3.17.3-Linux-x86_64.sh && \
+    mkdir -p /opt/cmake && \
+    /tmp/cmake-3.17.3-Linux-x86_64.sh --skip-license --prefix=/opt/cmake && \
+    deluser --remove-home node && \
+    adduser --home /usr/src/node-red --disabled-password --no-create-home node-red -u 1000
+
+ENV PATH="/opt/cmake/bin:${PATH}"
+
+### START SAPNWRFC
+ADD nwrfcsdk.tar.gz /usr/local/sap
+
+ENV SAPNWRFC_HOME=/usr/local/sap/nwrfcsdk
+
+RUN echo /usr/local/sap/nwrfcsdk/lib > /etc/ld.so.conf.d/nwrfcsdk.conf && \
+    ldconfig && \
+    # chown -R node-red:root /data && chmod -R g+rwX /data && \
+    chown -R node-red:root /tmp/build && \
+    mkdir -p /usr/src/node-red && \
+    chown -R node-red:root /usr/src/node-red && chmod -R g+rwX /usr/src/node-red
+
+USER node-red
+WORKDIR /tmp/build/node-rfc
+RUN npm install
+# WORK
+# RUN npm link /tmp/build/node-rfc && \
+#
+#     npm link /tmp/build/node-red-contrib-saprfc
+# && \
+#    npm install ./node-red-contrib-saprfc && \
+#    rm -rf ./node_modules/node-red-contrib-saprfc/node-rfc
+
+###############
+##### END BUILD
+
+
+ARG ARCH=amd64
+ARG NODE_VERSION=10
+ARG OS=lts-slim
+
+#### Stage BASE ########################################################################################################
+# FROM ${ARCH}/node:${NODE_VERSION}-${OS} AS base
+FROM node:lts-slim AS base
+
+# Copy scripts
+COPY scripts/*.sh /tmp/
+
+# Install tools, create Node-RED app and data dir, add user and set rights
+RUN set -ex && \
+    apt-get update || : && apt-get install perl-modules -y --no-install-recommends && \
+    mkdir -p /usr/src/node-red /data && \
+    mkdir -p /usr/local/sap && \
+    deluser --remove-home node && \
+    # adduser --home /usr/src/node-red -D -H node-red -u 1000 && \
+    adduser --home /usr/src/node-red --disabled-password --no-create-home node-red -u 1000 && \
+    chown -R node-red:root /data && chmod -R g+rwX /data && \ 
+    chown -R node-red:root /usr/src/node-red && chmod -R g+rwX /usr/src/node-red && \
+    npm config set prefix /data
+
+# Copy the built programs
+COPY --from=0 /tmp/build /data/
+COPY --from=0 /usr/local/sap/nwrfcsdk /usr/local/sap/nwrfcsdk/
+ENV SAPNWRFC_HOME=/usr/local/sap/nwrfcsdk
+
+RUN mkdir /data/node_modules && \
+    ln -s /data/node-red-contrib-saprfc/ /data/node_modules/node-red-contrib-saprfc && \
+    rm -rf /data/node-red-contrib-saprfc/node_modules/node-rfc && \
+    ln -s /data/node-rfc /data/node-red-contrib-saprfc/node_modules/node-rfc && \
+    chown -R node-red:root /data && chmod -R g+rwX /data && \
+    echo /usr/local/sap/nwrfcsdk/lib > /etc/ld.so.conf.d/nwrfcsdk.conf && \
+    ldconfig
+
+# Set work directory
+WORKDIR /usr/src/node-red
+
+# package.json contains Node-RED NPM module and node dependencies
+COPY package.json .
+
+#### Stage BUILD #######################################################################################################
+FROM base AS build
+
+# Install Build tools
+# RUN apk add --no-cache --virtual buildtools build-base linux-headers udev python && \
+RUN    npm install --unsafe-perm --no-update-notifier --only=production && \
+    /tmp/remove_native_gpio.sh && \
+    cp -R node_modules prod_node_modules
+
+#### Stage RELEASE #####################################################################################################
+FROM base AS RELEASE
+ARG BUILD_DATE
+ARG BUILD_VERSION
+ARG BUILD_REF
+ARG NODE_RED_VERSION
+ARG ARCH
+ARG TAG_SUFFIX=default
+
+LABEL org.label-schema.build-date=${BUILD_DATE} \
+    org.label-schema.docker.dockerfile=".docker/Dockerfile.alpine" \
+    org.label-schema.license="Apache-2.0" \
+    org.label-schema.name="Node-RED" \
+    org.label-schema.version=${BUILD_VERSION} \
+    org.label-schema.description="Low-code programming for event-driven applications." \
+    org.label-schema.url="https://nodered.org" \
+    org.label-schema.vcs-ref=${BUILD_REF} \
+    org.label-schema.vcs-type="Git" \
+    org.label-schema.vcs-url="https://github.com/node-red/node-red-docker" \
+    org.label-schema.arch=${ARCH} \
+    authors="Dave Conway-Jones, Nick O'Leary, James Thomas, Raymond Mouthaan"
+
+COPY --from=build /usr/src/node-red/prod_node_modules ./node_modules
+
+# Chown, install devtools & Clean up
+RUN chown -R node-red:root /usr/src/node-red && \
+#    /tmp/install_devtools.sh && \
+    rm -r /tmp/*
+
+USER node-red
+
+# Env variables
+ENV NODE_RED_VERSION=$NODE_RED_VERSION \
+    NODE_PATH=/usr/src/node-red/node_modules:/data/node_modules \
+    FLOWS=flows.json
+
+# ENV NODE_RED_ENABLE_SAFE_MODE=true    # Uncomment to enable safe start mode (flows not running)
+# ENV NODE_RED_ENABLE_PROJECTS=true     # Uncomment to enable projects option
+
+# User configuration directory volume
+VOLUME ["/data"]
+
+# Expose the listening port of node-red
+EXPOSE 1880
+
+# Add a healthcheck (default every 30 secs)
+# HEALTHCHECK CMD curl http://localhost:1880/ || exit 1
+
+ENTRYPOINT ["npm", "start", "--cache", "/data/.npm", "--", "--userDir", "/data"]
