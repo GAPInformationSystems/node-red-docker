@@ -8,11 +8,12 @@ echo "#########################################################################"
 # Build with lts-slim so we have a glibc linux base image. Alpine doesn't work with SAP NWRFCSDK
 export OS="lts-slim" # alpine | buster-slim | stretch-slim
 
-# START SAPNWRFC
 # For testing local changes to node-red-contrib-saprfc
 # rm -rf ./node-red-contrib-saprfc;
 # cp -r ~/Documents/GitHub/node-red-contrib-saprfc ./;
 
+git clone https://github.com/PaulWieland/node-red-contrib-saprfc.git
+git clone https://github.com/SAP/node-rfc.git
 
 #Put the nwrfc.zip file in this directory. download from https://launchpad.support.sap.com/#/softwarecenter/template/products/_APP=00200682500000001943&_EVENT=DISPHIER&HEADER=Y&FUNCTIONBAR=N&EVENT=TREE&NE=NAVIGATE&ENR=01200314690100002214&V=MAINT
 
