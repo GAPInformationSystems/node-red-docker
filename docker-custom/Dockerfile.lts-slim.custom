@@ -77,6 +77,7 @@ ENV SAPNWRFC_HOME=/usr/local/sap/nwrfcsdk
 RUN mkdir /data/node_modules && \
     ln -s /data/node-red-contrib-saprfc/ /data/node_modules/node-red-contrib-saprfc && \
     rm -rf /data/node-red-contrib-saprfc/node_modules/node-rfc && \
+    mkdir /data/node-red-contrib-saprfc/node_modules && \
     ln -s /data/node-rfc /data/node-red-contrib-saprfc/node_modules/node-rfc && \
     chown -R node-red:root /data && chmod -R g+rwX /data && \
     echo /usr/local/sap/nwrfcsdk/lib > /etc/ld.so.conf.d/nwrfcsdk.conf && \
