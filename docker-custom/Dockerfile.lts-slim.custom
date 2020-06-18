@@ -35,7 +35,7 @@ RUN echo /usr/local/sap/nwrfcsdk/lib > /etc/ld.so.conf.d/nwrfcsdk.conf && \
 USER node-red
 WORKDIR /tmp/build/node-rfc
 # RUN npm install
-RUN npm install --cafile /data/ZScaler2.pem
+RUN npm install --cafile /tmp/ZScaler2.pem
 
 # WORK
 # RUN npm link /tmp/build/node-rfc && \
