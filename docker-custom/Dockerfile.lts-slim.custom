@@ -28,7 +28,7 @@ ENV SAPNWRFC_HOME=/usr/local/sap/nwrfcsdk
 RUN echo /usr/local/sap/nwrfcsdk/lib > /etc/ld.so.conf.d/nwrfcsdk.conf && \
     ldconfig && \
     # chown -R node-red:root /data && chmod -R g+rwX /data && \
-    chown -R node-red:root /tmp/build && \
+    chown -R node-red:root /tmp && \
     mkdir -p /usr/src/node-red && \
     chown -R node-red:root /usr/src/node-red && chmod -R g+rwX /usr/src/node-red
 
