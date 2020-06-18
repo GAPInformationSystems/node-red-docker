@@ -24,6 +24,8 @@ rm -rf nwrfcsdk;
 # END SAPNWRFC
 
 docker build --no-cache \
+    # --build-arg HTTP_PROXY=http://
+    # --build-arg HTTPS_PROXY=http://
     --build-arg ARCH=amd64 \
     --build-arg NODE_VERSION=12 \
     --build-arg NODE_RED_VERSION=${NODE_RED_VERSION} \
