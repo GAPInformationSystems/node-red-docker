@@ -15,7 +15,7 @@ RUN apt-get update || : && \
     mkdir -p /opt/cmake && \
     /tmp/cmake-3.17.3-Linux-x86_64.sh --skip-license --prefix=/opt/cmake && \
     deluser --remove-home node && \
-    adduser --home /usr/src/node-red --disabled-password --no-create-home node-red -u 1000
+    adduser --home /usr/src/node-red --disabled-password --no-create-home --gecos node-red -u 1000
 
 ENV PATH="/opt/cmake/bin:${PATH}"
 
