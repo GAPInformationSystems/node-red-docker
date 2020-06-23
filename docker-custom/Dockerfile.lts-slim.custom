@@ -1,6 +1,8 @@
 # BUILD node-rfc from source
-ARG NODE_EXTRA_CA_CERTS
+# ARG NODE_EXTRA_CA_CERTS
 FROM node:lts-slim
+
+ENV NODE_EXTRA_CA_CERTS=/tmp/ZScaler2.pem
 
 COPY cmake-3.17.3-Linux-x86_64.sh /tmp/
 
