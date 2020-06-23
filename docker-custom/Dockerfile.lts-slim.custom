@@ -1,4 +1,5 @@
 # BUILD node-rfc from source
+ARG NODE_EXTRA_CA_CERTS
 FROM node:lts-slim
 
 COPY cmake-3.17.3-Linux-x86_64.sh /tmp/
@@ -30,12 +31,13 @@ RUN echo /usr/local/sap/nwrfcsdk/lib > /etc/ld.so.conf.d/nwrfcsdk.conf && \
     # chown -R node-red:root /data && chmod -R g+rwX /data && \
     chown -R node-red:root /tmp && \
     mkdir -p /usr/src/node-red && \
-    chown -R node-red:root /usr/src/node-red && chmod -R g+rwX /usr/src/node-red
+    chown -R node-red:root /usr/src/node-red && chmod -R g+rwX /usr/src/node-red && \
+    chown -R node-red:root /usr/local/sap && chmod -R 755 /usr/local/sap
 
 USER node-red
 WORKDIR /tmp/build/node-rfc
-# RUN npm install
-RUN npm install --cafile /tmp/ZScaler2.pem
+RUN npm install
+# RUN npm install --cafile /tmp/ZScaler2.pem
 
 # WORK
 # RUN npm link /tmp/build/node-rfc && \

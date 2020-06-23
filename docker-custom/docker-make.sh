@@ -23,9 +23,11 @@ tar -czf nwrfcsdk.tar.gz nwrfcsdk;
 rm -rf nwrfcsdk;
 # END SAPNWRFC
 
+# add --build-arg http_proxy, https_proxy and NODE_EXTRA_CA_CERTS if you have a corporate proxy/cert
 docker build --no-cache \
-    # --build-arg HTTP_PROXY=http://
-    # --build-arg HTTPS_PROXY=http://
+    --build-arg http_proxy=http://gateway.zscaler.net:9480 \
+    --build-arg https_proxy=http://gateway.zscaler.net:9480 \
+    --build-arg NODE_EXTRA_CA_CERTS=/tmp/ZScaler2.pem \
     --build-arg ARCH=amd64 \
     --build-arg NODE_VERSION=12 \
     --build-arg NODE_RED_VERSION=${NODE_RED_VERSION} \
