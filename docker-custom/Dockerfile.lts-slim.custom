@@ -2,19 +2,23 @@
 # ARG NODE_EXTRA_CA_CERTS
 FROM node:lts-slim
 
-ENV NODE_EXTRA_CA_CERTS=/tmp/ZScaler2.pem
+ENV NODE_EXTRA_CA_CERTS=/tmp/build/ZScaler2.pem
 
 COPY cmake-3.17.3-Linux-x86_64.sh /tmp/
 
 # Copy the cloned PR of node-rfc to be built
 COPY ./node-rfc /tmp/build/node-rfc
 COPY ./node-red-contrib-saprfc /tmp/build/node-red-contrib-saprfc
-COPY ./ZScaler2.pem /tmp/ZScaler2.pem
+# COPY ./ZScaler2.pem /tmp/ZScaler2.pem
+COPY ./ZScaler2.pem /tmp/build/ZScaler2.pem
+COPY ./data_package.json /tmp/build/package.json
+COPY ./settings.js /tmp/build/settings.js
+COPY ./user-authentication.js /tmp/build/user-authentication.js
 
 # Setup build environment for compiling node-rfc from source
 RUN apt-get update || : && \
     apt-get purge cmake && \ 
-    apt-get install perl-modules python build-essential -y --no-install-recommends && \
+    apt-get install perl-modules python build-essential -y --no-install-recommends --allow-unauthenticated && \
     chmod 755 /tmp/cmake-3.17.3-Linux-x86_64.sh && \
     mkdir -p /opt/cmake && \
     /tmp/cmake-3.17.3-Linux-x86_64.sh --skip-license --prefix=/opt/cmake && \
@@ -24,6 +28,15 @@ RUN apt-get update || : && \
 ENV PATH="/opt/cmake/bin:${PATH}"
 
 ### START SAPNWRFC
+WORKDIR /tmp/build
+RUN npm install activedirectory && \
+    mv /tmp/build/node_modules/activedirectory /tmp/build/activedirectory && \
+    mkdir /tmp/build/activedirectory/node_modules && \
+    mv /tmp/build/node_modules/* /tmp/build/activedirectory/node_modules/ && \
+    mv /tmp/build/node_modules/.bin /tmp/build/activedirectory/node_mouldes/ && \
+    rm /tmp/build/package-lock.json && \
+    rmdir /tmp/build/node_modules
+
 ADD nwrfcsdk.tar.gz /usr/local/sap
 
 ENV SAPNWRFC_HOME=/usr/local/sap/nwrfcsdk
@@ -39,7 +52,6 @@ RUN echo /usr/local/sap/nwrfcsdk/lib > /etc/ld.so.conf.d/nwrfcsdk.conf && \
 USER node-red
 WORKDIR /tmp/build/node-rfc
 RUN npm install
-# RUN npm install --cafile /tmp/ZScaler2.pem
 
 # WORK
 # RUN npm link /tmp/build/node-rfc && \
@@ -66,7 +78,7 @@ COPY scripts/*.sh /tmp/
 
 # Install tools, create Node-RED app and data dir, add user and set rights
 RUN set -ex && \
-    apt-get update || : && apt-get install perl-modules -y --no-install-recommends && \
+    apt-get update || : && apt-get install perl-modules -y --no-install-recommends --allow-unauthenticated && \
     mkdir -p /usr/src/node-red /data && \
     mkdir -p /usr/local/sap && \
     deluser --remove-home node && \
@@ -79,9 +91,13 @@ RUN set -ex && \
 # Copy the built programs
 COPY --from=0 /tmp/build /data/
 COPY --from=0 /usr/local/sap/nwrfcsdk /usr/local/sap/nwrfcsdk/
-ENV SAPNWRFC_HOME=/usr/local/sap/nwrfcsdk
+ENV SAPNWRFC_HOME=/usr/local/sap/nwrfcsdk \
+    http_proxy=http://gateway.zscaler.net:9480 \
+    https_proxy=http://gateway.zscaler.net:9480 \
+    NODE_EXTRA_CA_CERTS=/data/ZScaler2.pem
 
 RUN mkdir /data/node_modules && \
+    ln -s /data/activedirectory/ /data/node_modules/activedirectory && \
     ln -s /data/node-red-contrib-saprfc/ /data/node_modules/node-red-contrib-saprfc && \
     rm -rf /data/node-red-contrib-saprfc/node_modules/node-rfc && \
     mkdir /data/node-red-contrib-saprfc/node_modules && \
