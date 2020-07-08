@@ -21,6 +21,7 @@ module.exports = {
 				case 'brian.dodd@atlascopco.com':
 				case 'daniel.giese@atlascopco.com':
 				case 'spencer.lee@atlascopco.com':
+                case 'michael.curry@atlascopco.com':
 					resolve(user);
 					break;
 				default: resolve(null);

@@ -94,6 +94,7 @@ COPY --from=0 /usr/local/sap/nwrfcsdk /usr/local/sap/nwrfcsdk/
 ENV SAPNWRFC_HOME=/usr/local/sap/nwrfcsdk \
     http_proxy=http://gateway.zscaler.net:9480 \
     https_proxy=http://gateway.zscaler.net:9480 \
+    no_proxy=127.0.0.1,atlascopco.net,atlascopco.com \
     NODE_EXTRA_CA_CERTS=/data/ZScaler2.pem
 
 RUN mkdir /data/node_modules && \
