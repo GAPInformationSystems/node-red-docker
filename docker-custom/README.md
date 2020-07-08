@@ -8,7 +8,7 @@ The follow steps describe in short which steps to take to build your own images.
 
 Clone the Node-RED Docker project from github
 ```shell script
-git clone  https://github.com/PaulWieland/node-red-docker.git
+git clone  https://github.com/GAPInformationSystems/node-red-docker.git
 ```
 
 Change dir to docker-custom
